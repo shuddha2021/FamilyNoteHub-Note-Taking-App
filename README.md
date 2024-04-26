@@ -10,6 +10,10 @@ The Note-Taking App is a versatile and intuitive web application designed to hel
 - **Customizable Notes**: Add, edit, and delete notes with rich text details, allowing for personalized note-taking and task tracking.
 - **Interactive Navigation**: A simple navigation system for switching between different modules, enhancing user experience.
 
+<img width="1627" alt="Screenshot 2024-04-26 at 2 05 30 PM" src="https://github.com/shuddha2021/FamilyNoteHub-Note-Taking-App/assets/81951239/97688966-8e6b-4196-acbc-a48530d97bd0">
+<img width="1646" alt="Screenshot 2024-04-26 at 2 07 10 PM" src="https://github.com/shuddha2021/FamilyNoteHub-Note-Taking-App/assets/81951239/f1f8475e-6136-442a-ab7a-42bae218ffbb">
+
+
 ## Technologies Used
 - **HTML/CSS**: Provides the foundational structure and styling for the app.
 - **JavaScript**: Powers interactive elements and logic, enabling smooth user experiences.
