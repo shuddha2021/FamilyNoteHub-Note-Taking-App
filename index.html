@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note-Taking App</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { width: 80%; margin: auto; overflow: hidden; }
+        header { background: #50b3a2; color: white; padding-top: 30px; min-height: 70px; border-bottom: #e8491d 3px solid; }
+        header a { color: #ffffff; text-decoration: none; text-transform: uppercase; font-size: 16px; }
+        header ul { padding: 0; margin: 0; list-style: none; overflow: hidden; }
+        header li { float: left; display: inline; padding: 0 20px; }
+        header #branding { float: left; }
+        header #branding h1 { margin: 0; }
+        header nav { float: right; margin-top: 10px; }
+        header .highlight, header .current a { color: #e8491d; font-weight: bold; }
+        header a:hover { color: #ffffff; font-weight: bold; }
+        .module { background: #ffffff; padding: 20px; margin-top: 20px; display: none; }
+        .module.active { display: block; }
+        label, input, textarea { display: block; margin-bottom: 10px; }
+        input[type="text"], textarea { width: 90%; padding: 10px; }
+        input[type="submit"] { width: 20%; background: #333; color: white; padding: 10px; cursor: pointer; }
+        input[type="submit"]:hover { background: #e8491d; }
+        .entry { background: #e2e2e2; padding: 10px; margin-top: 10px; position: relative; }
+        .entry .controls { position: absolute; right: 10px; top: 10px; }
+        .entry .edit-btn, .entry .delete-btn { padding: 5px; cursor: pointer; }
+        .entry .edit-btn { color: #f0ad4e; }
+        .entry .delete-btn { color: #d9534f; }
+        .entry .complete-btn { color: #5cb85c; }
+    </style>
+</head>
+<body>
+<header>
+    <div class="container">
+        <div id="branding">
+            <h1><span class="highlight">Family</span> Notes</h1>
+        </div>
+        <nav>
+            <ul>
+                <li class="current"><a href="javascript:void(0);" onclick="showModule('daily')">Daily Activities</a></li>
+                <li><a href="javascript:void(0);" onclick="showModule('nutrition')">Nutrition</a></li>
+                <li><a href="javascript:void(0);" onclick="showModule('academic')">Academic</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<div class="container">
+    <div id="daily" class="module active">
+        <h2>Daily Activities</h2>
+        <form id="dailyForm">
+            <label for="dailyInput">New Activity:</label>
+            <input type="text" id="dailyInput" placeholder="Enter activity...">
+            <input type="submit" value="Add Activity">
+        </form>
+        <div id="dailyList"></div>
+        <button class="clear-all-btn" onclick="clearAll('daily')">Clear All Activities</button>
+    </div>
+
+    <div id="nutrition" class="module">
+        <h2>Nutritional Intake</h2>
+        <form id="nutritionForm">
+            <label for="nutritionInput">New Entry:</label>
+            <input type="text" id="nutritionInput" placeholder="Enter food item...">
+            <textarea id="nutritionDetails" placeholder="Details..."></textarea>
+            <input type="submit" value="Add Entry">
+        </form>
+        <div id="nutritionList"></div>
+        <button class="clear-all-btn" onclick="clearAll('nutrition')">Clear All Nutritional Entries</button>
+    </div>
+
+    <div id="academic" class="module">
+        <h2>Academic Assignments</h2>
+        <form id="academicForm">
+            <label for="academicInput">New Assignment:</label>
+            <input type="text" id="academicInput" placeholder="Enter assignment...">
+            <textarea id="academicDetails" placeholder="Details..."></textarea>
+            <input type="submit" value="Add Assignment">
+        </form>
+        <div id="academicList"></div>
+        <button class="clear-all-btn" onclick="clearAll('academic')">Clear All Assignments</button>
+    </div>
+</div>
+
+<script>
+    function showModule(module) {
+        document.querySelectorAll('.module').forEach(mod => mod.classList.remove('active'));
+        document.getElementById(module).classList.add('active');
+        document.querySelectorAll('nav a').forEach(nav => nav.classList.remove('current'));
+        document.querySelector(`nav a[onclick="showModule('${module}')"]`).classList.add('current');
+    }
+
+    let editId = null;
+
+    function addOrUpdateEntry(module, form) {
+        var input = document.getElementById(`${module}Input`).value.trim();
+        var detailsId = module + 'Details';
+        var details = document.getElementById(detailsId) ? document.getElementById(detailsId).value.trim() : '';
+
+        if (input === '') return;
+
+        var listId = module + 'List';
+        var list = document.getElementById(listId);
+
+        if (editId) {
+            var entry = document.getElementById(editId);
+            entry.querySelector('strong').textContent = input;
+            entry.querySelector('.details').textContent = details ? `: ${details}` : '';
+            editId = null;
+        } else {
+            var newId = module + '-' + Date.now();
+            var entry = document.createElement('div');
+            entry.classList.add('entry');
+            entry.setAttribute('id', newId);
+            entry.innerHTML = `<strong>${input}</strong><span class="details">${details ? `: ${details}` : ''}</span>`;
+            entry.innerHTML += `<div class="controls"><span class="edit-btn" onclick="editEntry('${newId}')">Edit</span> | <span class="delete-btn" onclick="deleteEntry('${newId}')">Delete</span> | <span class="complete-btn" onclick="completeEntry('${newId}')">Complete</span></div>`;
+            list.appendChild(entry);
+        }
+
+        form.reset();
+        saveToLocalStorage(module, list.innerHTML);
+    }
+
+    function editEntry(entryId) {
+        var entry = document.getElementById(entryId);
+        var parentModule = entry.closest('.module').id;
+
+        if (parentModule === 'daily') {
+            document.getElementById('dailyInput').value = entry.querySelector('strong').textContent;
+        } else if (parentModule === 'nutrition') {
+            var parts = entry.querySelector('strong').textContent.split(':');
+            document.getElementById('nutritionInput').value = parts[0].trim();
+            document.getElementById('nutritionDetails').value = parts[1].trim();
+        } else if (parentModule === 'academic') {
+            var parts = entry.querySelector('strong').textContent.split(':');
+            document.getElementById('academicInput').value = parts[0].trim();
+            document.getElementById('academicDetails').value = parts[1].trim();
+        }
+
+        editId = entryId;
+    }
+
+    function deleteEntry(entryId) {
+        var entry = document.getElementById(entryId);
+        var parentModule = entry.closest('.module').id;
+
+        entry.remove();
+        saveToLocalStorage(parentModule, document.getElementById(parentModule + 'List').innerHTML);
+    }
+
+    function completeEntry(entryId) {
+        var entry = document.getElementById(entryId);
+        entry.style.textDecoration = 'line-through';
+        entry.querySelector('.complete-btn').remove();
+        saveToLocalStorage(entry.closest('.module').id, document.getElementById(entry.closest('.module').id + 'List').innerHTML);
+    }
+
+    function clearAll(module) {
+        var listId = module + 'List';
+        document.getElementById(listId).innerHTML = '';
+        saveToLocalStorage(module, '');
+    }
+
+    function saveToLocalStorage(module, content) {
+        localStorage.setItem(module + 'List', content);
+    }
+
+    function loadFromLocalStorage(module, listId) {
+        var content = localStorage.getItem(module + 'List');
+        if (content) {
+            document.getElementById(listId).innerHTML = content;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadFromLocalStorage('daily', 'dailyList');
+        loadFromLocalStorage('nutrition', 'nutritionList');
+        loadFromLocalStorage('academic', 'academicList');
+    });
+
+    document.getElementById('dailyForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        addOrUpdateEntry('daily', this);
+    });
+
+    document.getElementById('nutritionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        addOrUpdateEntry('nutrition', this);
+    });
+
+    document.getElementById('academicForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        addOrUpdateEntry('academic', this);
+    });
+
+</script>
+</body>
+</html>
