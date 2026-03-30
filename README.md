@@ -1,43 +1,80 @@
-# Note-Taking App
-The Note-Taking App is a versatile and intuitive web application designed to help users efficiently manage their daily activities, nutritional intake, and academic assignments. Its modular structure and user-friendly interface allow for easy organization and tracking of various tasks and notes, making it ideal for personal use and small team collaborations.
+# FamilyNoteHub — Family Note-Taking App
 
-## Key Features
-- **Drag-and-Drop Interface**: Move notes across different categories with a simple drag-and-drop action, allowing you to manage tasks with ease.
-- **Editable Task Details**: Update task information quickly through a simple editing interface, enabling efficient workflow adjustments.
-- **Persistent Storage**: Save notes to localStorage, ensuring continuity even after refreshing or closing the app.
-- **Clear All Functionality**: Easily clear all tasks within a module, streamlining task management.
-- **Modular Structure**: Separate modules for daily activities, nutritional intake, and academic assignments offer clear task organization.
-- **Customizable Notes**: Add, edit, and delete notes with rich text details, allowing for personalized note-taking and task tracking.
-- **Interactive Navigation**: A simple navigation system for switching between different modules, enhancing user experience.
+A responsive family note-taking application for organizing daily activities, nutritional intake, and academic assignments. Built with vanilla HTML, CSS, and JavaScript — no frameworks, no build step. Notes persist in `localStorage` and can be reordered across modules via drag-and-drop.
 
-<img width="1627" alt="Screenshot 2024-04-26 at 2 05 30 PM" src="https://github.com/shuddha2021/FamilyNoteHub-Note-Taking-App/assets/81951239/97688966-8e6b-4196-acbc-a48530d97bd0">
-<img width="1646" alt="Screenshot 2024-04-26 at 2 07 10 PM" src="https://github.com/shuddha2021/FamilyNoteHub-Note-Taking-App/assets/81951239/f1f8475e-6136-442a-ab7a-42bae218ffbb">
+**Live demo:** [familyhubnotes.vercel.app](https://familyhubnotes.vercel.app/)
 
+---
 
-## Technologies Used
-- **HTML/CSS**: Provides the foundational structure and styling for the app.
-- **JavaScript**: Powers interactive elements and logic, enabling smooth user experiences.
-- **Local Storage**: Stores the state of the app, allowing users to pick up where they left off.
+## Screenshots
 
-## How to Run the App
-To get started with the Note-Taking App, follow these steps:
+<img width="1627" alt="Screenshot 2024-04-26 at 2 05 30 PM" src="https://github.com/shuddha2021/FamilyNoteHub-Note-Taking-App/assets/81951239/97688966-8e6b-4196-acbc-a48530d97bd0">
+<img width="1646" alt="Screenshot 2024-04-26 at 2 07 10 PM" src="https://github.com/shuddha2021/FamilyNoteHub-Note-Taking-App/assets/81951239/f1f8475e-6136-442a-ab7a-42bae218ffbb">
 
-1. **Clone the repository**: `git clone https://github.com/your-username/note-taking-app.git`
-2. **Navigate to the project directory**: `cd note-taking-app`
-3. **Open `index.html` in your web browser**: This will launch the app, allowing you to begin using it.
+---
 
-## Contributing
-Contributions to the Note-Taking App are encouraged and appreciated! Whether you have suggestions for new features, find a bug, or want to improve existing functionality, we welcome your contributions. Please open an issue or submit a pull request on GitHub to get started.
+## Features
 
-## License
-This project is licensed under the MIT License, allowing for flexibility in usage and modification. Please refer to the LICENSE.md file for more details.
+| Feature | Description |
+|---|---|
+| **Three Modules** | Daily activities, nutritional intake, and academic assignments — each with its own panel |
+| **Drag & Drop** | Reorder notes within a module or move them across modules by dragging |
+| **Add / Edit / Delete** | Full CRUD with inline editing and cancel support |
+| **Mark Complete** | Toggle completion status with undo capability |
+| **Persistent Storage** | JSON-backed `localStorage` — notes survive refresh and browser restart |
+| **Clear All** | Confirmation dialog prevents accidental bulk deletion |
+| **Toast Notifications** | Brief feedback on every action (added, deleted, moved, etc.) |
+| **Responsive** | Mobile-friendly layout with a sticky header and adaptive grid forms |
+| **Accessible** | ARIA roles, keyboard navigation (Escape to cancel), focus management |
+| **Relative Timestamps** | "just now", "5m ago", "2h ago" — auto-refreshed every minute |
+| **v1 Migration** | Automatically migrates notes saved in the old innerHTML format |
 
-## Acknowledgments
-We would like to acknowledge the following for their support and contributions:
-- **Users and developers** who help improve the app through their feedback and contributions.
-- **Open-source community** for providing the resources and platforms that make collaborative projects possible.
+## Architecture
+
+```
+index.html          Single-file application
+├── <style>         Modern CSS: custom properties, flexbox/grid, responsive breakpoints
+└── <script>        Vanilla ES6+ JavaScript
+    ├── Data layer  JSON in localStorage (keyed as familynotehub_v2)
+    ├── Rendering   DOM-built entries (no innerHTML for user data — XSS-safe)
+    ├── DnD         Native HTML5 drag-and-drop with visual drop targets
+    ├── Dialog      Custom confirm dialog for destructive actions
+    └── Migration   v1 (innerHTML) → v2 (JSON) automatic converter
+```
+
+## Bug Fixes from Original
+
+| Bug | Impact | Fix |
+|---|---|---|
+| **XSS via innerHTML** | User input injected raw into `innerHTML` — script injection possible | All user text set via `textContent`; data stored as JSON |
+| **Edit broke nutrition/academic** | `editEntry()` split `<strong>` text on `:` but details were in a separate span | Edit reads structured data from the JSON store, not from DOM |
+| **Nav highlight mismatch** | CSS styled `.current a` (class on `<li>`) but JS added `current` to `<a>` | Replaced with ARIA `aria-selected` on `<button>` tabs |
+| **Drag-and-drop missing** | README claimed DnD but no implementation existed | Full native DnD: reorder within module + move across modules |
+| **No undo for completion** | Once completed, entries could not be reverted | Added ↩ undo button on completed entries |
+| **No delete confirmation** | Accidental "Clear All" wiped everything with no recovery | Confirm dialog with cancel for all bulk deletes |
+
+## Tech Stack
+
+- **HTML5** — semantic markup with `<header>`, `<main>`, `<section>`, `<nav>`
+- **CSS3** — custom properties, flexbox & grid, `@keyframes`, responsive `@media`
+- **JavaScript (ES6+)** — `const`/`let`, template literals, arrow functions, async/await, event delegation, native drag-and-drop API
+
+## Getting Started
+
+```bash
+git clone https://github.com/shuddha2021/FamilyNoteHub-Note-Taking-App.git
+cd FamilyNoteHub-Note-Taking-App
+open index.html          # macOS
+# or: xdg-open index.html   # Linux
+# or: start index.html       # Windows
+```
+
+No dependencies. No build step. Just open in a browser.
 
 ## Author
-- **Shuddha Chowdhury**: The primary author and maintainer of the Note-Taking App.
 
-Enjoy using the Note-Taking App to streamline your daily tasks, nutritional tracking, and academic assignments!
+**Shuddha Chowdhury** — [github.com/shuddha2021](https://github.com/shuddha2021)
+
+## License
+
+MIT

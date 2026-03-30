@@ -3,197 +3,1083 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Note-Taking App</title>
+    <title>FamilyNoteHub — Family Note-Taking App</title>
+    <meta name="description" content="Organize daily activities, nutrition, and academics with drag-and-drop notes, local storage, and a beautiful responsive interface.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
-        .container { width: 80%; margin: auto; overflow: hidden; }
-        header { background: #50b3a2; color: white; padding-top: 30px; min-height: 70px; border-bottom: #e8491d 3px solid; }
-        header a { color: #ffffff; text-decoration: none; text-transform: uppercase; font-size: 16px; }
-        header ul { padding: 0; margin: 0; list-style: none; overflow: hidden; }
-        header li { float: left; display: inline; padding: 0 20px; }
-        header #branding { float: left; }
-        header #branding h1 { margin: 0; }
-        header nav { float: right; margin-top: 10px; }
-        header .highlight, header .current a { color: #e8491d; font-weight: bold; }
-        header a:hover { color: #ffffff; font-weight: bold; }
-        .module { background: #ffffff; padding: 20px; margin-top: 20px; display: none; }
-        .module.active { display: block; }
-        label, input, textarea { display: block; margin-bottom: 10px; }
-        input[type="text"], textarea { width: 90%; padding: 10px; }
-        input[type="submit"] { width: 20%; background: #333; color: white; padding: 10px; cursor: pointer; }
-        input[type="submit"]:hover { background: #e8491d; }
-        .entry { background: #e2e2e2; padding: 10px; margin-top: 10px; position: relative; }
-        .entry .controls { position: absolute; right: 10px; top: 10px; }
-        .entry .edit-btn, .entry .delete-btn { padding: 5px; cursor: pointer; }
-        .entry .edit-btn { color: #f0ad4e; }
-        .entry .delete-btn { color: #d9534f; }
-        .entry .complete-btn { color: #5cb85c; }
+        /* ── Reset & Custom Properties ────────────────────────── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --clr-bg: #f0f2f5;
+            --clr-surface: #ffffff;
+            --clr-primary: #3a8f7f;
+            --clr-primary-hover: #2d7466;
+            --clr-accent: #e8491d;
+            --clr-text: #1a1a2e;
+            --clr-text-muted: #6b7280;
+            --clr-border: #e5e7eb;
+            --clr-entry-bg: #f9fafb;
+            --clr-entry-hover: #f3f4f6;
+            --clr-complete: #10b981;
+            --clr-edit: #f59e0b;
+            --clr-delete: #ef4444;
+            --clr-drag-over: #dbeafe;
+            --radius: 10px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --transition: 0.2s ease;
+            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        /* ── Base ─────────────────────────────────────────────── */
+        body {
+            font-family: var(--font);
+            background: var(--clr-bg);
+            color: var(--clr-text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ── Header ───────────────────────────────────────────── */
+        .header {
+            background: linear-gradient(135deg, var(--clr-primary), #2d7466);
+            color: #fff;
+            padding: 0 1.5rem;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-inner {
+            max-width: 960px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            min-height: 64px;
+        }
+
+        .brand {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .brand-icon {
+            font-size: 1.5rem;
+        }
+
+        .brand-accent {
+            color: var(--clr-accent);
+        }
+
+        /* ── Tab Navigation ───────────────────────────────────── */
+        .tabs {
+            display: flex;
+            gap: 0.25rem;
+            list-style: none;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.75);
+            font: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 0.6rem 1rem;
+            border-radius: var(--radius) var(--radius) 0 0;
+            cursor: pointer;
+            transition: background var(--transition), color var(--transition);
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        .tab-btn[aria-selected="true"] {
+            background: var(--clr-bg);
+            color: var(--clr-primary);
+        }
+
+        /* ── Main Content ─────────────────────────────────────── */
+        .main {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* ── Module Panels ────────────────────────────────────── */
+        .panel {
+            display: none;
+            background: var(--clr-surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            padding: 1.5rem;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* ── Form ─────────────────────────────────────────────── */
+        .note-form {
+            display: grid;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .form-row {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .form-row.two-col {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .form-field label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--clr-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.3rem;
+        }
+
+        .form-field input,
+        .form-field textarea {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            font: inherit;
+            font-size: 0.95rem;
+            border: 2px solid var(--clr-border);
+            border-radius: 8px;
+            background: var(--clr-bg);
+            color: var(--clr-text);
+            transition: border-color var(--transition), box-shadow var(--transition);
+        }
+
+        .form-field input:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: var(--clr-primary);
+            box-shadow: 0 0 0 3px rgba(58, 143, 127, 0.15);
+        }
+
+        .form-field textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.6rem 1.2rem;
+            font: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: var(--clr-primary);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--clr-primary-hover);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--clr-delete);
+            border: 2px solid var(--clr-delete);
+        }
+
+        .btn-danger:hover {
+            background: var(--clr-delete);
+            color: #fff;
+        }
+
+        .btn-cancel {
+            background: var(--clr-border);
+            color: var(--clr-text-muted);
+        }
+
+        .btn-cancel:hover {
+            background: #d1d5db;
+        }
+
+        /* ── Entry List (drop zone) ──────────────────────────── */
+        .entry-list {
+            min-height: 60px;
+            border-radius: var(--radius);
+            transition: background var(--transition);
+        }
+
+        .entry-list.drag-over {
+            background: var(--clr-drag-over);
+            outline: 2px dashed var(--clr-primary);
+            outline-offset: -2px;
+        }
+
+        .entry-list:empty::after {
+            content: 'No notes yet — add one above';
+            display: block;
+            text-align: center;
+            color: var(--clr-text-muted);
+            font-style: italic;
+            padding: 2rem 0;
+        }
+
+        /* ── Entry Card ───────────────────────────────────────── */
+        .entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            background: var(--clr-entry-bg);
+            border: 1px solid var(--clr-border);
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 0.5rem;
+            cursor: grab;
+            transition: background var(--transition), box-shadow var(--transition), opacity var(--transition);
+            position: relative;
+        }
+
+        .entry:hover {
+            background: var(--clr-entry-hover);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .entry.dragging {
+            opacity: 0.4;
+        }
+
+        .entry.completed .entry-title {
+            text-decoration: line-through;
+            color: var(--clr-text-muted);
+        }
+
+        .entry.completed .entry-details {
+            text-decoration: line-through;
+            color: var(--clr-text-muted);
+        }
+
+        .drag-handle {
+            color: var(--clr-text-muted);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            cursor: grab;
+            user-select: none;
+            padding-top: 0.15rem;
+        }
+
+        .entry-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .entry-title {
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .entry-details {
+            font-size: 0.88rem;
+            color: var(--clr-text-muted);
+            margin-top: 0.2rem;
+            word-break: break-word;
+        }
+
+        .entry-time {
+            font-size: 0.75rem;
+            color: var(--clr-text-muted);
+            margin-top: 0.3rem;
+            opacity: 0.7;
+        }
+
+        .entry-controls {
+            display: flex;
+            gap: 0.25rem;
+            flex-shrink: 0;
+        }
+
+        .ctrl-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            padding: 0.3rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background var(--transition);
+            line-height: 1;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(0, 0, 0, 0.06);
+        }
+
+        .ctrl-btn.complete { color: var(--clr-complete); }
+        .ctrl-btn.edit     { color: var(--clr-edit); }
+        .ctrl-btn.delete   { color: var(--clr-delete); }
+
+        .panel-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--clr-border);
+        }
+
+        .note-count {
+            font-size: 0.85rem;
+            color: var(--clr-text-muted);
+        }
+
+        /* ── Toast ────────────────────────────────────────────── */
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            background: var(--clr-text);
+            color: #fff;
+            padding: 0.65rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.2s forwards;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(30px); opacity: 0; }
+            to   { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateY(10px); }
+        }
+
+        /* ── Confirm Dialog ───────────────────────────────────── */
+        .dialog-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 300;
+            place-items: center;
+        }
+
+        .dialog-overlay.open {
+            display: grid;
+        }
+
+        .dialog {
+            background: var(--clr-surface);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            max-width: 380px;
+            width: 90%;
+            box-shadow: var(--shadow-lg);
+            animation: fadeIn 0.2s ease;
+        }
+
+        .dialog h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .dialog p {
+            color: var(--clr-text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        /* ── Responsive ───────────────────────────────────────── */
+        @media (max-width: 640px) {
+            .header-inner {
+                flex-direction: column;
+                padding: 0.75rem 0;
+                gap: 0.5rem;
+            }
+
+            .tabs {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .tab-btn {
+                flex: 1;
+                text-align: center;
+                font-size: 0.82rem;
+                padding: 0.5rem 0.5rem;
+            }
+
+            .main {
+                padding: 1rem 0.75rem;
+            }
+
+            .panel {
+                padding: 1rem;
+            }
+
+            .form-row.two-col {
+                grid-template-columns: 1fr;
+            }
+
+            .entry {
+                flex-wrap: wrap;
+            }
+
+            .entry-controls {
+                width: 100%;
+                justify-content: flex-end;
+                margin-top: 0.25rem;
+            }
+        }
     </style>
 </head>
 <body>
-<header>
-    <div class="container">
-        <div id="branding">
-            <h1><span class="highlight">Family</span> Notes</h1>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<header class="header">
+    <div class="header-inner">
+        <div class="brand">
+            <span class="brand-icon" aria-hidden="true">📝</span>
+            <span><span class="brand-accent">Family</span> NoteHub</span>
         </div>
-        <nav>
-            <ul>
-                <li class="current"><a href="javascript:void(0);" onclick="showModule('daily')">Daily Activities</a></li>
-                <li><a href="javascript:void(0);" onclick="showModule('nutrition')">Nutrition</a></li>
-                <li><a href="javascript:void(0);" onclick="showModule('academic')">Academic</a></li>
+        <nav aria-label="Module navigation">
+            <ul class="tabs" role="tablist">
+                <li role="presentation"><button class="tab-btn" role="tab" aria-selected="true" aria-controls="daily" id="tab-daily">📋 Daily</button></li>
+                <li role="presentation"><button class="tab-btn" role="tab" aria-selected="false" aria-controls="nutrition" id="tab-nutrition">🥗 Nutrition</button></li>
+                <li role="presentation"><button class="tab-btn" role="tab" aria-selected="false" aria-controls="academic" id="tab-academic">📚 Academic</button></li>
             </ul>
         </nav>
     </div>
 </header>
 
-<div class="container">
-    <div id="daily" class="module active">
-        <h2>Daily Activities</h2>
-        <form id="dailyForm">
-            <label for="dailyInput">New Activity:</label>
-            <input type="text" id="dailyInput" placeholder="Enter activity...">
-            <input type="submit" value="Add Activity">
-        </form>
-        <div id="dailyList"></div>
-        <button class="clear-all-btn" onclick="clearAll('daily')">Clear All Activities</button>
-    </div>
+<!-- ── Main ────────────────────────────────────────────────── -->
+<main class="main">
 
-    <div id="nutrition" class="module">
-        <h2>Nutritional Intake</h2>
-        <form id="nutritionForm">
-            <label for="nutritionInput">New Entry:</label>
-            <input type="text" id="nutritionInput" placeholder="Enter food item...">
-            <textarea id="nutritionDetails" placeholder="Details..."></textarea>
-            <input type="submit" value="Add Entry">
+    <!-- Daily Activities -->
+    <section id="daily" class="panel active" role="tabpanel" aria-labelledby="tab-daily">
+        <h2 class="panel-title">📋 Daily Activities</h2>
+        <form class="note-form" data-module="daily">
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="daily-input">Activity</label>
+                    <input type="text" id="daily-input" placeholder="What needs to be done?" required autocomplete="off">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Add Activity</button>
+                <button type="button" class="btn btn-cancel cancel-edit" hidden>Cancel Edit</button>
+            </div>
         </form>
-        <div id="nutritionList"></div>
-        <button class="clear-all-btn" onclick="clearAll('nutrition')">Clear All Nutritional Entries</button>
-    </div>
+        <div class="entry-list" id="daily-list" data-module="daily"></div>
+        <div class="panel-footer">
+            <span class="note-count" data-count="daily">0 notes</span>
+            <button class="btn btn-danger btn-clear" data-module="daily">Clear All</button>
+        </div>
+    </section>
 
-    <div id="academic" class="module">
-        <h2>Academic Assignments</h2>
-        <form id="academicForm">
-            <label for="academicInput">New Assignment:</label>
-            <input type="text" id="academicInput" placeholder="Enter assignment...">
-            <textarea id="academicDetails" placeholder="Details..."></textarea>
-            <input type="submit" value="Add Assignment">
+    <!-- Nutrition -->
+    <section id="nutrition" class="panel" role="tabpanel" aria-labelledby="tab-nutrition">
+        <h2 class="panel-title">🥗 Nutritional Intake</h2>
+        <form class="note-form" data-module="nutrition">
+            <div class="form-row two-col">
+                <div class="form-field">
+                    <label for="nutrition-input">Food Item</label>
+                    <input type="text" id="nutrition-input" placeholder="e.g. Grilled chicken salad" required autocomplete="off">
+                </div>
+                <div class="form-field">
+                    <label for="nutrition-details">Details</label>
+                    <input type="text" id="nutrition-details" placeholder="Calories, servings, etc." autocomplete="off">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Add Entry</button>
+                <button type="button" class="btn btn-cancel cancel-edit" hidden>Cancel Edit</button>
+            </div>
         </form>
-        <div id="academicList"></div>
-        <button class="clear-all-btn" onclick="clearAll('academic')">Clear All Assignments</button>
+        <div class="entry-list" id="nutrition-list" data-module="nutrition"></div>
+        <div class="panel-footer">
+            <span class="note-count" data-count="nutrition">0 notes</span>
+            <button class="btn btn-danger btn-clear" data-module="nutrition">Clear All</button>
+        </div>
+    </section>
+
+    <!-- Academic -->
+    <section id="academic" class="panel" role="tabpanel" aria-labelledby="tab-academic">
+        <h2 class="panel-title">📚 Academic Assignments</h2>
+        <form class="note-form" data-module="academic">
+            <div class="form-row two-col">
+                <div class="form-field">
+                    <label for="academic-input">Assignment</label>
+                    <input type="text" id="academic-input" placeholder="e.g. Math homework Ch. 5" required autocomplete="off">
+                </div>
+                <div class="form-field">
+                    <label for="academic-details">Details</label>
+                    <textarea id="academic-details" placeholder="Due date, instructions, etc." rows="2"></textarea>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Add Assignment</button>
+                <button type="button" class="btn btn-cancel cancel-edit" hidden>Cancel Edit</button>
+            </div>
+        </form>
+        <div class="entry-list" id="academic-list" data-module="academic"></div>
+        <div class="panel-footer">
+            <span class="note-count" data-count="academic">0 notes</span>
+            <button class="btn btn-danger btn-clear" data-module="academic">Clear All</button>
+        </div>
+    </section>
+</main>
+
+<!-- ── Toast Container ─────────────────────────────────────── -->
+<div class="toast-container" id="toasts" aria-live="polite"></div>
+
+<!-- ── Confirm Dialog ──────────────────────────────────────── -->
+<div class="dialog-overlay" id="dialog-overlay" role="dialog" aria-modal="true">
+    <div class="dialog">
+        <h3 id="dialog-title">Clear all notes?</h3>
+        <p id="dialog-message">This action cannot be undone.</p>
+        <div class="dialog-actions">
+            <button class="btn btn-cancel" id="dialog-cancel">Cancel</button>
+            <button class="btn btn-danger" id="dialog-confirm" style="background:var(--clr-delete);color:#fff;border:none;">Delete All</button>
+        </div>
     </div>
 </div>
 
 <script>
-    function showModule(module) {
-        document.querySelectorAll('.module').forEach(mod => mod.classList.remove('active'));
-        document.getElementById(module).classList.add('active');
-        document.querySelectorAll('nav a').forEach(nav => nav.classList.remove('current'));
-        document.querySelector(`nav a[onclick="showModule('${module}')"]`).classList.add('current');
-    }
+    "use strict";
 
-    let editId = null;
+    /* ── Data Layer ────────────────────────────────────────── */
+    const STORAGE_KEY = "familynotehub_v2";
 
-    function addOrUpdateEntry(module, form) {
-        var input = document.getElementById(`${module}Input`).value.trim();
-        var detailsId = module + 'Details';
-        var details = document.getElementById(detailsId) ? document.getElementById(detailsId).value.trim() : '';
+    const loadData = () => {
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? { daily: [], nutrition: [], academic: [] };
+        } catch {
+            return { daily: [], nutrition: [], academic: [] };
+        }
+    };
 
-        if (input === '') return;
+    const saveData = (data) => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    };
 
-        var listId = module + 'List';
-        var list = document.getElementById(listId);
+    let appData = loadData();
 
-        if (editId) {
-            var entry = document.getElementById(editId);
-            entry.querySelector('strong').textContent = input;
-            entry.querySelector('.details').textContent = details ? `: ${details}` : '';
-            editId = null;
+    /* ── Utility ───────────────────────────────────────────── */
+    const $ = (sel, ctx = document) => ctx.querySelector(sel);
+    const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
+
+    const escapeHtml = (str) => {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+    };
+
+    const formatTime = (ts) => {
+        const d = new Date(ts);
+        const now = new Date();
+        const diff = now - d;
+        if (diff < 60_000) return "just now";
+        if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+        if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+        return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    };
+
+    const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+    /* ── Toast ─────────────────────────────────────────────── */
+    const toast = (msg) => {
+        const el = document.createElement("div");
+        el.className = "toast";
+        el.textContent = msg;
+        $("#toasts").appendChild(el);
+        setTimeout(() => el.remove(), 2600);
+    };
+
+    /* ── Confirm Dialog ────────────────────────────────────── */
+    let dialogResolver = null;
+
+    const confirm = (title, message) => new Promise((resolve) => {
+        $("#dialog-title").textContent = title;
+        $("#dialog-message").textContent = message;
+        $("#dialog-overlay").classList.add("open");
+        $("#dialog-confirm").focus();
+        dialogResolver = resolve;
+    });
+
+    $("#dialog-cancel").addEventListener("click", () => {
+        $("#dialog-overlay").classList.remove("open");
+        dialogResolver?.(false);
+    });
+
+    $("#dialog-confirm").addEventListener("click", () => {
+        $("#dialog-overlay").classList.remove("open");
+        dialogResolver?.(true);
+    });
+
+    $("#dialog-overlay").addEventListener("click", (e) => {
+        if (e.target === e.currentTarget) {
+            $("#dialog-overlay").classList.remove("open");
+            dialogResolver?.(false);
+        }
+    });
+
+    /* ── Tab Switching ─────────────────────────────────────── */
+    $$(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            $$(".tab-btn").forEach((b) => b.setAttribute("aria-selected", "false"));
+            btn.setAttribute("aria-selected", "true");
+
+            $$(".panel").forEach((p) => p.classList.remove("active"));
+            $(`#${btn.getAttribute("aria-controls")}`).classList.add("active");
+        });
+    });
+
+    /* ── Render Entries ────────────────────────────────────── */
+    const renderEntry = (note, module) => {
+        const div = document.createElement("div");
+        div.className = `entry${note.completed ? " completed" : ""}`;
+        div.setAttribute("draggable", "true");
+        div.dataset.id = note.id;
+        div.dataset.module = module;
+
+        const handle = document.createElement("span");
+        handle.className = "drag-handle";
+        handle.textContent = "⠿";
+        handle.setAttribute("aria-hidden", "true");
+
+        const body = document.createElement("div");
+        body.className = "entry-body";
+
+        const title = document.createElement("div");
+        title.className = "entry-title";
+        title.textContent = note.title;
+
+        body.appendChild(title);
+
+        if (note.details) {
+            const details = document.createElement("div");
+            details.className = "entry-details";
+            details.textContent = note.details;
+            body.appendChild(details);
+        }
+
+        const time = document.createElement("div");
+        time.className = "entry-time";
+        time.textContent = formatTime(note.created);
+        body.appendChild(time);
+
+        const controls = document.createElement("div");
+        controls.className = "entry-controls";
+
+        if (!note.completed) {
+            const completeBtn = document.createElement("button");
+            completeBtn.className = "ctrl-btn complete";
+            completeBtn.textContent = "✓";
+            completeBtn.title = "Mark complete";
+            completeBtn.setAttribute("aria-label", "Mark complete");
+            completeBtn.dataset.action = "complete";
+            controls.appendChild(completeBtn);
         } else {
-            var newId = module + '-' + Date.now();
-            var entry = document.createElement('div');
-            entry.classList.add('entry');
-            entry.setAttribute('id', newId);
-            entry.innerHTML = `<strong>${input}</strong><span class="details">${details ? `: ${details}` : ''}</span>`;
-            entry.innerHTML += `<div class="controls"><span class="edit-btn" onclick="editEntry('${newId}')">Edit</span> | <span class="delete-btn" onclick="deleteEntry('${newId}')">Delete</span> | <span class="complete-btn" onclick="completeEntry('${newId}')">Complete</span></div>`;
-            list.appendChild(entry);
+            const undoBtn = document.createElement("button");
+            undoBtn.className = "ctrl-btn complete";
+            undoBtn.textContent = "↩";
+            undoBtn.title = "Undo complete";
+            undoBtn.setAttribute("aria-label", "Undo complete");
+            undoBtn.dataset.action = "uncomplete";
+            controls.appendChild(undoBtn);
         }
 
+        const editBtn = document.createElement("button");
+        editBtn.className = "ctrl-btn edit";
+        editBtn.textContent = "✎";
+        editBtn.title = "Edit";
+        editBtn.setAttribute("aria-label", "Edit note");
+        editBtn.dataset.action = "edit";
+        controls.appendChild(editBtn);
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "ctrl-btn delete";
+        deleteBtn.textContent = "✕";
+        deleteBtn.title = "Delete";
+        deleteBtn.setAttribute("aria-label", "Delete note");
+        deleteBtn.dataset.action = "delete";
+        controls.appendChild(deleteBtn);
+
+        div.append(handle, body, controls);
+        return div;
+    };
+
+    const renderModule = (module) => {
+        const list = $(`#${module}-list`);
+        list.innerHTML = "";
+        const notes = appData[module] ?? [];
+        notes.forEach((note) => list.appendChild(renderEntry(note, module)));
+        updateCount(module);
+    };
+
+    const updateCount = (module) => {
+        const notes = appData[module] ?? [];
+        const total = notes.length;
+        const done = notes.filter((n) => n.completed).length;
+        const el = $(`[data-count="${module}"]`);
+        el.textContent = total === 0 ? "0 notes" : `${total} note${total !== 1 ? "s" : ""}${done ? ` · ${done} done` : ""}`;
+    };
+
+    const renderAll = () => {
+        ["daily", "nutrition", "academic"].forEach(renderModule);
+    };
+
+    /* ── Edit State ────────────────────────────────────────── */
+    let editState = { module: null, id: null };
+
+    const cancelEdit = (module) => {
+        const form = $(`.note-form[data-module="${module}"]`);
         form.reset();
-        saveToLocalStorage(module, list.innerHTML);
-    }
+        form.querySelector(".cancel-edit").hidden = true;
+        editState = { module: null, id: null };
+    };
 
-    function editEntry(entryId) {
-        var entry = document.getElementById(entryId);
-        var parentModule = entry.closest('.module').id;
+    /* ── Form Submission ───────────────────────────────────── */
+    $$(".note-form").forEach((form) => {
+        const module = form.dataset.module;
 
-        if (parentModule === 'daily') {
-            document.getElementById('dailyInput').value = entry.querySelector('strong').textContent;
-        } else if (parentModule === 'nutrition') {
-            var parts = entry.querySelector('strong').textContent.split(':');
-            document.getElementById('nutritionInput').value = parts[0].trim();
-            document.getElementById('nutritionDetails').value = parts[1].trim();
-        } else if (parentModule === 'academic') {
-            var parts = entry.querySelector('strong').textContent.split(':');
-            document.getElementById('academicInput').value = parts[0].trim();
-            document.getElementById('academicDetails').value = parts[1].trim();
+        form.addEventListener("submit", (e) => {
+            e.preventDefault();
+
+            const titleInput = $(`#${module}-input`);
+            const detailsInput = $(`#${module}-details`);
+            const title = titleInput.value.trim();
+            const details = detailsInput?.value.trim() ?? "";
+
+            if (!title) return;
+
+            if (editState.module === module && editState.id) {
+                const note = appData[module].find((n) => n.id === editState.id);
+                if (note) {
+                    note.title = title;
+                    note.details = details;
+                    toast("Note updated");
+                }
+                cancelEdit(module);
+            } else {
+                appData[module].push({
+                    id: uid(),
+                    title,
+                    details,
+                    completed: false,
+                    created: Date.now(),
+                });
+                toast("Note added");
+            }
+
+            saveData(appData);
+            renderModule(module);
+            form.reset();
+            titleInput.focus();
+        });
+
+        form.querySelector(".cancel-edit")?.addEventListener("click", () => cancelEdit(module));
+    });
+
+    /* ── Entry Actions (event delegation) ──────────────────── */
+    $$(".entry-list").forEach((list) => {
+        list.addEventListener("click", (e) => {
+            const btn = e.target.closest("[data-action]");
+            if (!btn) return;
+
+            const entry = btn.closest(".entry");
+            const module = entry.dataset.module;
+            const id = entry.dataset.id;
+            const action = btn.dataset.action;
+
+            if (action === "complete") {
+                const note = appData[module].find((n) => n.id === id);
+                if (note) {
+                    note.completed = true;
+                    saveData(appData);
+                    renderModule(module);
+                    toast("Marked complete");
+                }
+            } else if (action === "uncomplete") {
+                const note = appData[module].find((n) => n.id === id);
+                if (note) {
+                    note.completed = false;
+                    saveData(appData);
+                    renderModule(module);
+                    toast("Unmarked");
+                }
+            } else if (action === "edit") {
+                const note = appData[module].find((n) => n.id === id);
+                if (!note) return;
+
+                $(`#${module}-input`).value = note.title;
+                const detailsInput = $(`#${module}-details`);
+                if (detailsInput) detailsInput.value = note.details ?? "";
+
+                editState = { module, id };
+                const form = $(`.note-form[data-module="${module}"]`);
+                form.querySelector(".cancel-edit").hidden = false;
+                $(`#${module}-input`).focus();
+            } else if (action === "delete") {
+                appData[module] = appData[module].filter((n) => n.id !== id);
+                saveData(appData);
+                renderModule(module);
+                toast("Note deleted");
+            }
+        });
+    });
+
+    /* ── Clear All ─────────────────────────────────────────── */
+    $$(".btn-clear").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+            const module = btn.dataset.module;
+            const count = appData[module].length;
+            if (count === 0) return;
+
+            const ok = await confirm(
+                `Clear all ${module} notes?`,
+                `This will permanently delete ${count} note${count !== 1 ? "s" : ""}.`
+            );
+
+            if (ok) {
+                appData[module] = [];
+                saveData(appData);
+                renderModule(module);
+                cancelEdit(module);
+                toast("All notes cleared");
+            }
+        });
+    });
+
+    /* ── Drag & Drop ───────────────────────────────────────── */
+    let draggedId = null;
+    let draggedModule = null;
+
+    document.addEventListener("dragstart", (e) => {
+        const entry = e.target.closest(".entry");
+        if (!entry) return;
+        draggedId = entry.dataset.id;
+        draggedModule = entry.dataset.module;
+        entry.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+    });
+
+    document.addEventListener("dragend", (e) => {
+        const entry = e.target.closest(".entry");
+        if (entry) entry.classList.remove("dragging");
+        $$(".entry-list").forEach((l) => l.classList.remove("drag-over"));
+        draggedId = null;
+        draggedModule = null;
+    });
+
+    $$(".entry-list").forEach((list) => {
+        list.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+
+            if (list.dataset.module !== draggedModule) {
+                list.classList.add("drag-over");
+                return;
+            }
+
+            const afterElement = getDragAfterElement(list, e.clientY);
+            const dragging = $(".entry.dragging");
+            if (!dragging) return;
+
+            if (afterElement) {
+                list.insertBefore(dragging, afterElement);
+            } else {
+                list.appendChild(dragging);
+            }
+        });
+
+        list.addEventListener("dragenter", (e) => {
+            e.preventDefault();
+            if (list.dataset.module !== draggedModule) {
+                list.classList.add("drag-over");
+            }
+        });
+
+        list.addEventListener("dragleave", (e) => {
+            if (!list.contains(e.relatedTarget)) {
+                list.classList.remove("drag-over");
+            }
+        });
+
+        list.addEventListener("drop", (e) => {
+            e.preventDefault();
+            list.classList.remove("drag-over");
+
+            if (!draggedId || !draggedModule) return;
+
+            const targetModule = list.dataset.module;
+
+            if (targetModule === draggedModule) {
+                // Reorder within same module
+                const entries = $$(".entry", list);
+                const newOrder = entries.map((el) => el.dataset.id);
+                appData[draggedModule] = newOrder.map((id) =>
+                    appData[draggedModule].find((n) => n.id === id)
+                ).filter(Boolean);
+            } else {
+                // Move across modules
+                const noteIdx = appData[draggedModule].findIndex((n) => n.id === draggedId);
+                if (noteIdx === -1) return;
+                const [note] = appData[draggedModule].splice(noteIdx, 1);
+                appData[targetModule].push(note);
+                renderModule(draggedModule);
+                renderModule(targetModule);
+                toast(`Moved to ${targetModule}`);
+            }
+
+            saveData(appData);
+        });
+    });
+
+    const getDragAfterElement = (container, y) => {
+        const elements = $$(".entry:not(.dragging)", container);
+        return elements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset, element: child };
+            }
+            return closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    };
+
+    /* ── Keyboard shortcut: Escape to cancel edit ──────────── */
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            if ($("#dialog-overlay").classList.contains("open")) {
+                $("#dialog-overlay").classList.remove("open");
+                dialogResolver?.(false);
+                return;
+            }
+            if (editState.module) {
+                cancelEdit(editState.module);
+            }
+        }
+    });
+
+    /* ── Migrate old localStorage (v1 innerHTML → v2 JSON) ── */
+    const migrateV1 = () => {
+        const modules = ["daily", "nutrition", "academic"];
+        let migrated = false;
+        for (const mod of modules) {
+            const raw = localStorage.getItem(mod + "List");
+            if (!raw) continue;
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(`<div>${raw}</div>`, "text/html");
+            const entries = doc.querySelectorAll(".entry");
+
+            entries.forEach((el) => {
+                const title = el.querySelector("strong")?.textContent?.trim() ?? "";
+                const details = el.querySelector(".details")?.textContent?.replace(/^:\s*/, "")?.trim() ?? "";
+                if (title) {
+                    appData[mod].push({
+                        id: uid(),
+                        title,
+                        details,
+                        completed: el.style.textDecoration === "line-through",
+                        created: Date.now(),
+                    });
+                }
+            });
+
+            localStorage.removeItem(mod + "List");
+            migrated = true;
         }
 
-        editId = entryId;
-    }
-
-    function deleteEntry(entryId) {
-        var entry = document.getElementById(entryId);
-        var parentModule = entry.closest('.module').id;
-
-        entry.remove();
-        saveToLocalStorage(parentModule, document.getElementById(parentModule + 'List').innerHTML);
-    }
-
-    function completeEntry(entryId) {
-        var entry = document.getElementById(entryId);
-        entry.style.textDecoration = 'line-through';
-        entry.querySelector('.complete-btn').remove();
-        saveToLocalStorage(entry.closest('.module').id, document.getElementById(entry.closest('.module').id + 'List').innerHTML);
-    }
-
-    function clearAll(module) {
-        var listId = module + 'List';
-        document.getElementById(listId).innerHTML = '';
-        saveToLocalStorage(module, '');
-    }
-
-    function saveToLocalStorage(module, content) {
-        localStorage.setItem(module + 'List', content);
-    }
-
-    function loadFromLocalStorage(module, listId) {
-        var content = localStorage.getItem(module + 'List');
-        if (content) {
-            document.getElementById(listId).innerHTML = content;
+        if (migrated) {
+            saveData(appData);
+            toast("Notes migrated from previous version");
         }
-    }
+    };
 
-    document.addEventListener('DOMContentLoaded', function() {
-        loadFromLocalStorage('daily', 'dailyList');
-        loadFromLocalStorage('nutrition', 'nutritionList');
-        loadFromLocalStorage('academic', 'academicList');
-    });
+    /* ── Init ──────────────────────────────────────────────── */
+    migrateV1();
+    renderAll();
 
-    document.getElementById('dailyForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        addOrUpdateEntry('daily', this);
-    });
-
-    document.getElementById('nutritionForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        addOrUpdateEntry('nutrition', this);
-    });
-
-    document.getElementById('academicForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        addOrUpdateEntry('academic', this);
-    });
-
+    /* Refresh relative times every minute */
+    setInterval(() => {
+        $$(".entry-time").forEach((el) => {
+            const entry = el.closest(".entry");
+            const module = entry.dataset.module;
+            const id = entry.dataset.id;
+            const note = appData[module]?.find((n) => n.id === id);
+            if (note) el.textContent = formatTime(note.created);
+        });
+    }, 60_000);
 </script>
 </body>
 </html>
